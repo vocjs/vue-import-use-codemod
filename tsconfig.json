@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": false,
+    "esModuleInterop": true,
+    "allowJs": false,
+    "preserveConstEnums": true,
+    "skipLibCheck": true,
+    "removeComments": true,
+    "declaration": true,
+    "module": "ESNext",
+    "outDir": "es",
+    "declarationDir": "es"
+  }
+}
+
