@@ -1,6 +1,6 @@
 {
   "name": "vue-import-use-codemod",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "code modification for vue3 import and use",
   "main": "lib/index.js",
   "module": "es/index.js",
