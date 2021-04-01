@@ -1,6 +1,6 @@
 {
   "name": "vue-import-use-codemod",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "code modification for vue3 import and use",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -36,5 +36,8 @@
     "jscodeshift": "^0.11.0",
     "shx": "^0.3.3",
     "typescript": "^4.2.3"
+  },
+  "peerDependencies": {
+    "babel-plugin-import": "^1.13.3"
   }
 }
