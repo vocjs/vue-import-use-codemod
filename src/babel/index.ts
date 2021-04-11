@@ -10,10 +10,13 @@ type UseTransform = (option: CodeModOptions) => Transform;
 /**
  *  确保存在 plugins 节点
  * @param properties
- * @param plugins
  * @param api
  */
-function ensurePluginsProperty(properties: Collection<Property>, plugins: Collection<Property>, api: API) {
+function ensurePluginsProperty(properties: Collection<Property>, api: API) {
+  const plugins = properties.filter(({ node }) => {
+    const { key } = node as Property;
+    return (key as Identifier).name === 'plugins';
+  });
   /* 不存在则 添加 plugins 节点 */
   if (!plugins.length) {
     const pluginsProperty: Property = api.j.property('init', api.j.identifier('plugins'), api.j.arrayExpression([]));
@@ -23,12 +26,14 @@ function ensurePluginsProperty(properties: Collection<Property>, plugins: Collec
 
 /**
  * 保存或修改配置信息
+ * @param plugins
  * @param pluginNodes
  * @param pluginNode
  * @param api
  * @param opts
  */
 function save(
+  plugins: Collection<Property>,
   pluginNodes: Collection<ArrayExpression>,
   pluginNode: Collection<ArrayExpression>,
   api: API,
@@ -58,11 +63,21 @@ function save(
       return api.j.arrayExpression(elements);
     });
   } else {
-    const elements: any[] = [];
-    elements.push(api.j.literal('import'));
-    elements.push(option);
-    elements.push(api.j.literal(libraryName));
-    pluginNodes.at(-1).insertAfter(api.j.arrayExpression(elements));
+    const elementArray: any[] = [];
+    elementArray.push(api.j.literal('import'));
+    elementArray.push(option);
+    elementArray.push(api.j.literal(libraryName));
+    const pluginConf = api.j.arrayExpression(elementArray);
+
+    if (pluginNodes.length > 0) {
+      pluginNodes.at(-1).insertAfter(pluginConf);
+    } else {
+      plugins.replaceWith(({ node }) => {
+        const { elements } = node.value as ArrayExpression;
+        elements.push(pluginConf);
+        return node;
+      });
+    }
   }
 }
 
@@ -98,16 +113,16 @@ const babelTransform: UseTransform = (opts) => {
       },
     );
 
-    /* 3. 查找 plugins 配置节点 */
-    const plugins = properties.filter(({ node }) => {
-      const { key } = node as Property;
-      return (key as Identifier).name === 'plugins';
+    /* 3. 确保 babel 配置存在 plugins 属性 */
+    ensurePluginsProperty(properties, api);
+
+    /* 4. 查找 plugins 配置节点 */
+    const plugins = babelRoot.find<Property>(api.j.Property as AstType<Property>, (node: Property) => {
+      const { key, value } = node;
+      return identifier.check(key) && arrayExpression.check(value) && key.name === 'plugins';
     });
 
-    /* 4. 确保 babel 配置存在 plugins 属性 */
-    ensurePluginsProperty(properties, plugins, api);
-
-    /* 3. 查找按需引入插件配置节点 */
+    /* 5. 查找按需引入插件配置节点 */
     const pluginNodes = plugins.find<ArrayExpression>(
       j.ArrayExpression as AstType<ArrayExpression>,
       (node: ArrayExpression) => {
@@ -138,7 +153,7 @@ const babelTransform: UseTransform = (opts) => {
     if (remove) {
       pluginNode.remove();
     } else {
-      save(pluginNodes, pluginNode, api, mergeOpts);
+      save(plugins, pluginNodes, pluginNode, api, mergeOpts);
     }
 
     return root.toSource();
